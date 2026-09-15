@@ -1,70 +1,45 @@
-# ROS IntelliSense Setup
+# ROS IntelliSense — Drop-in Build Script
 
-One-shot setup for ROS workspace build + VS Code IntelliSense.
-Auto-detects platform and ROS distro.
-
-## Platform compatibility
-
-| Platform | Status | Notes |
-|----------|--------|-------|
-| **Linux (Ubuntu/Debian)** | ✅ Full support | Primary target |
-| **WSL2 (Windows)** | ✅ Full support | Auto-detected via /proc/version |
-| **macOS (Apple Silicon/Intel)** | ✅ Full support | Auto-detects Homebrew gcc |
-| **Windows native** | ❌ Not supported | Use WSL2 instead |
+One file. Zero config. Just copy and run.
 
 ## Quick start
 
 ```bash
-cd ~/robotica_ws
-/path/to/setup.sh
+# Copy build.sh into any ROS workspace
+cp build.sh ~/my_ros_ws/
+
+# Run it — auto-detects platform, distro, sets up IntelliSense
+cd ~/my_ros_ws && ./build.sh
 ```
 
-This auto-detects your platform and ROS distro, then installs:
-- `.ros-intellisense.env` — detected config (distro, platform, compiler)
-- `build.sh` — build + merge (self-contained)
-- `.vscode/` — IntelliSense config + build tasks
+## What it does
 
-## One-shot setup
+1. **Auto-detects** platform (Linux/WSL/macOS), ROS distro, compiler
+2. **Auto-generates** `.ros-intellisense.env` config + `.vscode/` if missing
+3. **Builds** with `colcon build` + `CMAKE_EXPORT_COMPILE_COMMANDS=ON`
+4. **Merges** all `compile_commands.json` for VS Code IntelliSense
 
-```bash
-# Auto-detect everything
-./setup.sh
+## Platform compatibility
 
-# Specify workspace
-./setup.sh ~/robotica_ws
+| Platform | Status |
+|----------|--------|
+| Linux (Ubuntu/Debian) | ✅ |
+| WSL2 | ✅ auto-detected |
+| macOS (Apple Silicon/Intel) | ✅ auto-detects Homebrew gcc |
+| Windows native | ❌ use WSL2 |
 
-# Override ROS distro
-./setup.sh --distro humble
-./setup.sh -d rolling
-```
-
-## Configuration
-
-`setup.sh` generates `.ros-intellisense.env` with detected values:
+## Usage
 
 ```bash
-ROS_DISTRO=jazzy
-PLATFORM=linux
-COMPILER_PATH=/usr/bin/gcc
-ROS_INCLUDE=/opt/ros/jazzy/include/**
-PARALLEL_WORKERS=4
-MINE_BASE_PATH=src/user
-```
-
-Edit this file to override any setting. `build.sh` reads it on every run.
-
-## Daily usage
-
-### Terminal
-
-```bash
-./build.sh                           # build all packages
-./build.sh -m                        # build only src/user
+./build.sh                           # build all + merge
+./build.sh -m                        # build only src/<user>
 ./build.sh -c                        # build current directory
-./build.sh -m -c                     # build src/user in current dir
-./build.sh /path/to/ws               # build a specific workspace
-./build.sh --packages-select my_pkg  # build a single package
+./build.sh -m -c                     # build src/<user> in current dir
+./build.sh /path/to/ws               # build specific workspace
+./build.sh --packages-select my_pkg  # build one package
 ./build.sh --no-merge                # build only, skip merge
+./build.sh --distro humble           # override ROS distro
+./build.sh --help                    # show all options
 ```
 
 ### VS Code
@@ -72,58 +47,52 @@ Edit this file to override any setting. `build.sh` reads it on every run.
 | Shortcut | Action |
 |----------|--------|
 | `Ctrl+Shift+B` | Build all + merge IntelliSense |
-| `Ctrl+Shift+P` → **Tasks: Run Task** | Build specific package |
-| `Ctrl+Shift+P` → **C/C++: Reset IntelliSense Database** | Force refresh |
+| `Ctrl+Shift+P` → Tasks | Build specific package |
+| `Ctrl+Shift+P` → C/C++: Reset IntelliSense Database | Force refresh |
+
+## Configuration
+
+First run generates `.ros-intellisense.env`:
+
+```bash
+ROS_DISTRO=jazzy
+PLATFORM=linux
+COMPILER_PATH=/usr/bin/gcc
+ROS_INCLUDE=/opt/ros/jazzy/include/**
+PARALLEL_WORKERS=4
+MINE_BASE_PATH=src/macianz
+```
+
+Edit this file to override any setting. Delete it to re-detect.
 
 ## How it works
 
-1. `setup.sh` detects platform + ROS distro → generates `.ros-intellisense.env`
-2. `build.sh` reads config, runs `colcon build` with `CMAKE_EXPORT_COMPILE_COMMANDS=ON`
-3. `build.sh` merges all `build/*/compile_commands.json` (inline Python, no deps)
-4. VS Code C/C++ extension reads the merged database for IntelliSense
-
-## Architecture
-
 ```
-setup.sh                  # One-shot installer (run once)
-build.sh                  # Self-contained build + merge (run every time)
-.ros-intellisense.env     # Auto-detected config (distro, platform, compiler)
+build.sh                    ← copy this single file anywhere
+.ros-intellisense.env       ← auto-generated (edit to override)
 .vscode/
-  c_cpp_properties.json   # Points IntelliSense at merged DB
-  tasks.json              # Build tasks for Ctrl+Shift+B
+  c_cpp_properties.json     ← auto-generated
+  tasks.json                ← auto-generated
 build/
-  compile_commands.json   # Merged IntelliSense database (auto-generated)
+  compile_commands.json     ← merged IntelliSense database
 ```
-
-## Platform-specific behavior
-
-### Linux / WSL2
-- Compiler: `/usr/bin/gcc`
-- ROS path: `/opt/ros/{distro}/include/**`
-- Build args: standard colcon flags
-
-### macOS
-- Compiler: auto-detected (`/opt/homebrew/bin/gcc-14` → `/usr/bin/clang`)
-- ROS path: `/opt/ros/{distro}/include/**`
-- Build args: adds `-DCMAKE_PREFIX_PATH=/opt/homebrew` if Homebrew detected
 
 ## Integration with rosbuild
 
-`build.sh` supports the same flags as the `rosbuild()` shell function:
+Same flags as the `rosbuild()` shell function:
 
 - `-c / --current` — force build in current directory
-- `-m / --mine` — build only packages under `src/user`
+- `-m / --mine` — build only packages under `src/<user>`
 - Workspace auto-detection (current dir > `ROSWORKSPACE` > default)
 
-You can replace the `rosbuild()` function in your `.bashrc` with a simple alias:
-
 ```bash
+# Replace rosbuild() with a simple alias
 alias rosbuild='~/robotica_ws/build.sh'
 ```
 
 ## Troubleshooting
 
-- **IntelliSense not updating**: `Ctrl+Shift+P` → **C/C++: Reset IntelliSense Database**
-- **Wrong ROS distro detected**: run `./setup.sh --distro humble` to override
-- **No compile_commands.json**: ensure your package has `ament_cmake` in its `package.xml`
-- **Build fails**: check that ROS is sourced (`source /opt/ros/{distro}/setup.bash`)
+- **IntelliSense not updating**: `Ctrl+Shift+P` → C/C++: Reset IntelliSense Database
+- **Wrong distro**: `./build.sh --distro humble` (regenerates config)
+- **No compile_commands.json**: package needs `ament_cmake` in `package.xml`
+- **Build fails**: ensure ROS is sourced (`source /opt/ros/{distro}/setup.bash`)
