@@ -1,0 +1,15 @@
+.vscode/**
+.vscode-test/**
+src/**
+out/test/**
+**/*.ts
+**/*.map
+tsconfig.json
+.gitignore
+.gitattributes
+.vscodeignore
+AGENTS.md
+media/*.jpeg
+ros_int.sh
+scripts/**
+node_modules/**

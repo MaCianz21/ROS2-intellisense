@@ -1,3 +1,11 @@
+# Extension build output
+out/
+node_modules/
+*.vsix
+
+# Agent instructions (local only, never commit)
+/AGENTS.md
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

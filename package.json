@@ -1,0 +1,170 @@
+{
+  "name": "ros2-intellisense",
+  "displayName": "ROS 2 IntelliSense",
+  "description": "Adds the active ROS 2 package and its dependencies to C/C++ IntelliSense, and builds colcon workspaces.",
+  "version": "0.1.7",
+  "publisher": "macianz",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MaCianz21/ROS-intellisense-setup.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MaCianz21/ROS-intellisense-setup/issues"
+  },
+  "homepage": "https://github.com/MaCianz21/ROS-intellisense-setup#readme",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "ros",
+    "ros2",
+    "colcon",
+    "ament",
+    "intellisense",
+    "cpp",
+    "c++"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:cpp",
+    "onLanguage:c"
+  ],
+  "extensionDependencies": [
+    "ms-vscode.cpptools"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "ros2IntelliSense.build",
+        "title": "Build Workspace",
+        "category": "ROS 2"
+      },
+      {
+        "command": "ros2IntelliSense.buildPackage",
+        "title": "Build Package…",
+        "category": "ROS 2"
+      },
+      {
+        "command": "ros2IntelliSense.buildMine",
+        "title": "Build My Packages",
+        "category": "ROS 2"
+      },
+      {
+        "command": "ros2IntelliSense.merge",
+        "title": "Merge compile_commands.json",
+        "category": "ROS 2"
+      },
+      {
+        "command": "ros2IntelliSense.refresh",
+        "title": "Refresh Active Package / IntelliSense",
+        "category": "ROS 2"
+      },
+      {
+        "command": "ros2IntelliSense.showActivePackage",
+        "title": "Show Active Package",
+        "category": "ROS 2"
+      },
+      {
+        "command": "ros2IntelliSense.setupWorkspace",
+        "title": "Set Up Workspace for IntelliSense",
+        "category": "ROS 2"
+      },
+      {
+        "command": "ros2IntelliSense.selectDistro",
+        "title": "Select ROS 2 Distribution",
+        "category": "ROS 2"
+      }
+    ],
+    "configuration": {
+      "title": "ROS 2 IntelliSense",
+      "properties": {
+        "ros2IntelliSense.rosDistro": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "ROS 2 distribution to use (e.g. `humble`, `jazzy`, `rolling`). Leave empty to auto-detect from `ROS_DISTRO`, `.ros-intellisense.env`, `AMENT_PREFIX_PATH`/`COLCON_PREFIX_PATH`/`CONDA_PREFIX`, or `/opt/ros`."
+        },
+        "ros2IntelliSense.rosPrefix": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Absolute path to the ROS 2 installation prefix (the directory containing `setup.bash`), e.g. `/opt/ros/jazzy` or a RoboStack/conda environment. Leave empty to auto-detect from the environment and `/opt/ros`."
+        },
+        "ros2IntelliSense.compilerPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Full path to the compiler used for IntelliSense. Leave empty to use `C_Cpp.default.compilerPath`, then `$CXX`, then a platform default (the C++ driver where available)."
+        },
+        "ros2IntelliSense.parallelWorkers": {
+          "type": "number",
+          "default": 4,
+          "minimum": 1,
+          "description": "Number of parallel workers passed to colcon build."
+        },
+        "ros2IntelliSense.mineBasePath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Base path built by the \"Build My Packages\" command, relative to the workspace. Defaults to `src/<user>`, then `src`, then the workspace root (package-at-root and direct-package layouts)."
+        },
+        "ros2IntelliSense.extraIncludePaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Additional include directories added to every IntelliSense configuration. `${workspaceFolder}` is expanded to the workspace root."
+        },
+        "ros2IntelliSense.includeMode": {
+          "type": "string",
+          "enum": [
+            "package",
+            "workspace"
+          ],
+          "enumDescriptions": [
+            "Only the active package, its dependencies, the ROS distro and the exact include flags from compile_commands.json (recommended, lightest).",
+            "Additionally scan the whole workspace with `${workspaceFolder}/**` (heaviest)."
+          ],
+          "default": "package",
+          "markdownDescription": "How much of the workspace is added to the IntelliSense include path."
+        },
+        "ros2IntelliSense.enableWorkspaceSymbolSearch": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Feed a symbol-search (`browse`) index to the C/C++ extension, covering `src/**` and `include/**` (plus packages kept directly under a repo root). Disable to make the extension even lighter (go-to-definition for resolved headers still works)."
+        },
+        "ros2IntelliSense.enableConfigurationProvider": {
+          "type": "boolean",
+          "default": true,
+          "description": "Register a Custom Configuration Provider with the C/C++ extension and select it automatically when no other provider is configured."
+        },
+        "ros2IntelliSense.sourceSetupScripts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Extra setup scripts sourced before `colcon build` (after the ROS installation's `setup.bash` and the workspace `install/setup.bash`)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "check": "tsc -p ./ --noEmit",
+    "test": "npm run compile && node ./out/test/runTests.js",
+    "smoke": "npm run compile && node scripts/smoke.js",
+    "package": "node scripts/package.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "1.85.0",
+    "@vscode/vsce": "^3.0.0",
+    "typescript": "^5.4.0"
+  }
+}

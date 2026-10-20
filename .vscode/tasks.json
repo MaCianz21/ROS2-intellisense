@@ -2,66 +2,21 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "ROS: Build & Merge IntelliSense",
-            "type": "shell",
-            "command": "${workspaceFolder}/build.sh",
-            "args": [],
+            "type": "npm",
+            "script": "compile",
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                "showReuseMessage": false,
-                "clear": true
-            },
-            "problemMatcher": [
-                "$gcc"
-            ],
-            "detail": "Run colcon build with CMAKE_EXPORT_COMPILE_COMMANDS=ON, then merge compile_commands.json"
+            "problemMatcher": "$tsc",
+            "label": "npm: compile"
         },
         {
-            "label": "ROS: Build (specific package) & Merge IntelliSense",
-            "type": "shell",
-            "command": "${workspaceFolder}/build.sh",
-            "args": [
-                "--packages-select",
-                "${input:packageName}"
-            ],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                "showReuseMessage": false,
-                "clear": true
-            },
-            "problemMatcher": [
-                "$gcc"
-            ],
-            "detail": "Build a specific ROS package and merge compile_commands.json"
-        },
-        {
-            "label": "ROS: Reset IntelliSense Database",
-            "type": "shell",
-            "command": "touch ${workspaceFolder}/build/compile_commands.json",
-            "group": "none",
-            "presentation": {
-                "reveal": "never"
-            },
-            "problemMatcher": [],
-            "detail": "Touch the merged compile_commands.json to trigger a C/C++ extension reload"
-        }
-    ],
-    "inputs": [
-        {
-            "id": "packageName",
-            "type": "promptString",
-            "description": "Enter the ROS package name to build"
+            "type": "npm",
+            "script": "watch",
+            "problemMatcher": "$tsc-watch",
+            "isBackground": true,
+            "label": "npm: watch"
         }
     ]
 }
