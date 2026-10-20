@@ -135,7 +135,7 @@
 
 ## 0.1.0
 
-- Converted the drop-in shell script into a VS Code extension.
+- Initial VS Code extension release.
 - Added a C/C++ **Custom Configuration Provider** that injects the active ROS 2
   package and its `package.xml` dependencies into IntelliSense.
 - **Performance-first include paths:** concrete, non-recursive directories only
@@ -147,4 +147,3 @@
 - Re-implemented `colcon build` and `compile_commands.json` merging in TypeScript.
 - Added commands: build workspace/package/mine, merge, refresh, show package,
   set up workspace, select distro.
-- Kept `ros_int.sh` for headless/CI use.

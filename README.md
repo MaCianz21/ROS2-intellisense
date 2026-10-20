@@ -1,4 +1,4 @@
-# ROS 2 IntelliSense
+# <img src="media/icon.png" alt="ROS 2 IntelliSense icon" width="32" height="32"> ROS 2 IntelliSense
 
 Per-package C/C++ IntelliSense and `colcon` builds for ROS 2 workspaces in VS Code.
 
