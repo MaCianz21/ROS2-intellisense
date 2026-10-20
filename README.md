@@ -5,11 +5,11 @@ Per-package C/C++ IntelliSense and `colcon` builds for ROS 2 workspaces in VS Co
 The extension registers a **Custom Configuration Provider** with Microsoft's
 C/C++ extension (`ms-vscode.cpptools`). For every C/C++ file it finds the owning
 ROS 2 package and supplies that package's include paths, its `package.xml`
-dependencies, the detected ROS install, and the exact `-I` / `-D` / `-std` flags
-from `compile_commands.json`. It can also run `colcon build` and merge the
-resulting compile databases.
+dependencies, the detected ROS install, and — for built files — the exact
+`-I` / `-D` / `-std` flags from `compile_commands.json`. It can also run
+`colcon build` and merge the resulting compile databases.
 
-> **Status:** `0.1.7` (beta). Linux and WSL 2 are supported; macOS is best
+> **Status:** `0.1.8` (beta). Linux and WSL 2 are supported; macOS is best
 > effort; native Windows is not supported. Distributed as a VSIX; it is not
 > published on the VS Code Marketplace.
 
@@ -79,11 +79,11 @@ resulting compile databases.
 
 ### From the VSIX (recommended)
 
-1. Get `ros2-intellisense-0.1.7.vsix`.
+1. Get `ros2-intellisense-0.1.8.vsix`.
 2. Install it from a terminal:
 
    ```bash
-   code --install-extension ros2-intellisense-0.1.7.vsix --force
+   code --install-extension ros2-intellisense-0.1.8.vsix --force
    ```
 
    Or use VS Code: **Extensions** → `...` → **Install from VSIX…**.
@@ -199,9 +199,12 @@ IntelliSense is computed live for every file:
 1. Find the `package.xml` that owns the file (walking up from the file).
 2. Add that package's `include/` directory.
 3. Add the include directories of every dependency in its `package.xml`.
-4. Add this workspace's `install/**` and one non-recursive root per ROS-layout
-   package (`<ros-prefix>/include/<pkg>`).
-5. Fold in the exact `-I` flags recovered from `compile_commands.json`, if present.
+4. Add this workspace's `install/**`.
+5. If the file has a compile entry, put its exact `-I` flags first and use them
+   as the primary include set, adding only the roots of declared direct
+   dependencies; otherwise add one non-recursive root per ROS-layout package
+   (`<ros-prefix>/include/<pkg>`) as a fallback. Headers and unbuilt files
+   therefore keep working without a build database.
 6. Forward the exact `-D` defines and `-std` of that file's compile command (if it
    has an entry), so macro-guarded code and the language standard match the build.
 
@@ -275,6 +278,11 @@ Afterwards every `build/*/compile_commands.json` is merged (de-duplicated) into
 ## Troubleshooting
 
 - **IntelliSense not updating**: run **ROS 2: Refresh Active Package / IntelliSense**, or `Ctrl+Shift+P` → *C/C++: Reset IntelliSense Database*.
+- **Suggestions feel slow**: the extension already uses a built file's exact
+  compile includes instead of every ROS root. For extra responsiveness, lower
+  `C_Cpp.intelliSenseUpdateDelay` to `300`–`500` ms; set
+  `ros2IntelliSense.enableWorkspaceSymbolSearch` to `false` if you do not need
+  Find All References across the workspace.
 - **Provider not used**: the extension selects itself when no provider is
   configured. If you previously chose another provider, run **ROS 2: Set Up
   Workspace for IntelliSense** (or set

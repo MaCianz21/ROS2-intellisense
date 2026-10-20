@@ -2,7 +2,7 @@
   "name": "ros2-intellisense",
   "displayName": "ROS 2 IntelliSense",
   "description": "Adds the active ROS 2 package and its dependencies to C/C++ IntelliSense, and builds colcon workspaces.",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "publisher": "macianz",
   "license": "MIT",
   "icon": "media/icon.png",

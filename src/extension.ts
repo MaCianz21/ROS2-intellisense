@@ -61,7 +61,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     };
 
     context.subscriptions.push(controller.onDidUpdate.event(updateStatusBar));
-    context.subscriptions.push(controller.onDidUpdate.event(notify));
+    context.subscriptions.push(controller.onDidChangeProvider.event(notify));
 
     await controller.initialize();
 
@@ -254,13 +254,21 @@ function registerFileWatchers(context: vscode.ExtensionContext, controller: RosC
     let watchers: vscode.FileSystemWatcher[] = [];
     const debouncedRefresh = debounce(() => void controller.refreshAll());
     const debouncedReload = debounce(() => void controller.reloadCompileIncludes());
+    // build/, install/ and log/ contain generated package.xml copies; a colcon
+    // build rewrites many of them and none affect how a source file resolves.
+    const ignoredManifest = /(^|[\\/])(build|install|log|node_modules|\.git)([\\/]|$)/;
+    const refreshManifest = (uri: vscode.Uri): void => {
+        if (!ignoredManifest.test(uri.fsPath)) {
+            debouncedRefresh();
+        }
+    };
 
     const manifestWatcher = vscode.workspace.createFileSystemWatcher('**/package.xml');
     context.subscriptions.push(
         manifestWatcher,
-        manifestWatcher.onDidCreate(debouncedRefresh),
-        manifestWatcher.onDidChange(debouncedRefresh),
-        manifestWatcher.onDidDelete(debouncedRefresh),
+        manifestWatcher.onDidCreate(refreshManifest),
+        manifestWatcher.onDidChange(refreshManifest),
+        manifestWatcher.onDidDelete(refreshManifest),
     );
 
     const installWatchers = (): void => {

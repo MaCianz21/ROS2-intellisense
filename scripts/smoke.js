@@ -128,8 +128,12 @@ function cppToolsExtension(recorder) {
                 notifyReady: () => {
                     recorder.ready = true;
                 },
-                didChangeCustomConfiguration: () => {},
-                didChangeCustomBrowseConfiguration: () => {},
+                didChangeCustomConfiguration: () => {
+                    recorder.configChanges = (recorder.configChanges || 0) + 1;
+                },
+                didChangeCustomBrowseConfiguration: () => {
+                    recorder.browseChanges = (recorder.browseChanges || 0) + 1;
+                },
                 dispose() {},
             }),
         },
@@ -372,6 +376,23 @@ async function main() {
     assert.ok(
         stub.statusBar.text.includes('demo_pkg'),
         `status bar shows the active package (got "${stub.statusBar.text}")`,
+    );
+
+    // Switching tabs only needs a status-bar refresh; cpptools re-queries the
+    // provider on compile-database/package changes, not on every editor switch.
+    const configChangesBeforeSwitch = recorder.configChanges || 0;
+    stub.calls.activeEditorListener({
+        document: {
+            uri: {
+                scheme: 'file',
+                fsPath: path.join(workspace.packageDir, 'src', 'another_node.cpp'),
+            },
+        },
+    });
+    assert.strictEqual(
+        recorder.configChanges || 0,
+        configChangesBeforeSwitch,
+        'tab switch does not notify cpptools',
     );
 
     // The provider must produce a concrete include path for that file.

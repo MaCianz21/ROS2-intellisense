@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.8
+
+- **Built files use their own compile includes.** When a file has an entry in
+  `compile_commands.json`, the provider now uses that entry's `-I` / `-isystem`
+  list as the primary include set and adds only the roots of direct
+  `package.xml` dependencies, instead of appending every installed ROS package
+  root. On the reference workspace the target file dropped from 232 to 63
+  include entries. Headers and unbuilt files keep the full ROS-root fallback, so
+  go-to-definition and pre-build IntelliSense still work.
+- **Compile includes come first.** Exact build flags are placed before the
+  broad ROS roots, matching the compiler's real search order and resolving
+  project headers sooner.
+- **Fewer cpptools notifications.** Switching editor tabs now refreshes only the
+  status bar; cpptools is notified only when the provider-visible configuration
+  changes (compile database, package layout, settings).
+- **Quieter package watcher.** `package.xml` events under `build/`, `install/`,
+  `log/`, `node_modules/` and `.git/` no longer trigger a full refresh during a
+  colcon build.
+
 ## 0.1.7
 
 - **Zero-config onboarding.** When a ROS 2 workspace is detected and the C/C++

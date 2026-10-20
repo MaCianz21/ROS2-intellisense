@@ -15,6 +15,7 @@ import {
 } from '../colcon';
 import {
     compileCommandFlags,
+    compileEntryForFile,
     defaultStandardFor,
     definesForFile,
     includeDirectoriesFromCompileCommands,
@@ -149,6 +150,8 @@ check('collects compile flags and defines per file', () => {
         },
     ]);
     const flags = compileCommandFlags(json);
+    assert.strictEqual(compileEntryForFile(flags, '/ws/src/a.cpp')?.file, '/ws/src/a.cpp');
+    assert.strictEqual(compileEntryForFile(flags, '/ws/src/missing.cpp'), undefined);
     assert.deepStrictEqual(definesForFile(flags, '/ws/src/a.cpp'), ['FOO=1', 'BAR']);
     assert.deepStrictEqual(definesForFile(flags, '/ws/src/b.cpp'), ['BAZ']);
     assert.deepStrictEqual(definesForFile(flags, '/ws/src/missing.cpp'), []);
@@ -361,6 +364,32 @@ check('adds per-package ROS include roots (non-recursive)', () => {
     });
     assert.ok(paths.includes('/opt/ros/jazzy/include/rclcpp'), 'per-package ROS root');
     assert.ok(!paths.some((p) => p.endsWith('/**')), 'still no recursive globs');
+});
+
+check('puts compile includes before the ROS package roots', () => {
+    const paths = planIncludePaths(workspace, robotPackage, {
+        mode: 'package',
+        compileIncludes: ['/ws/generated/include'],
+        extraIncludePaths: [],
+        rosIncludeRoots: ['/opt/ros/jazzy/include/rclcpp'],
+    });
+    assert.ok(
+        paths.indexOf('/ws/generated/include') <
+            paths.indexOf('/opt/ros/jazzy/include/rclcpp'),
+        'exact build include wins over the broad ROS roots',
+    );
+});
+
+check('exact compile mode can omit ROS package roots', () => {
+    const paths = planIncludePaths(workspace, robotPackage, {
+        mode: 'package',
+        compileIncludes: ['/ws/generated/include'],
+        extraIncludePaths: [],
+        rosIncludeRoots: [],
+    });
+    assert.ok(paths.includes('/ws/generated/include'));
+    assert.ok(paths.includes('/opt/ros/jazzy/include'), 'base ROS include stays');
+    assert.ok(!paths.includes('/opt/ros/jazzy/include/rclcpp'), 'roots are omitted');
 });
 
 check('ROS package roots expose only packages with the ROS layout', () => {

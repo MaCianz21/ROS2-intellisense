@@ -241,18 +241,26 @@ function normalizePath(value: string): string {
     return slashed.length > 1 ? slashed.replace(/\/+$/, '') : slashed;
 }
 
+/** The compile entry that builds `filePath`, if the database has one. */
+export function compileEntryForFile(
+    flags: CompileCommandFlags[],
+    filePath: string,
+): CompileCommandFlags | undefined {
+    const target = normalizePath(filePath);
+    for (const entry of flags) {
+        if (entry.file && normalizePath(entry.file) === target) {
+            return entry;
+        }
+    }
+    return undefined;
+}
+
 /**
  * `-D` defines from the entry that compiles `filePath`. Empty when the database
  * has no entry for it (a header, or a build that has not run yet).
  */
 export function definesForFile(flags: CompileCommandFlags[], filePath: string): string[] {
-    const target = normalizePath(filePath);
-    for (const entry of flags) {
-        if (entry.file && normalizePath(entry.file) === target) {
-            return entry.defines;
-        }
-    }
-    return [];
+    return compileEntryForFile(flags, filePath)?.defines ?? [];
 }
 
 /** Old/alternative `-std` spellings that cpptools does not accept verbatim. */
@@ -297,13 +305,7 @@ export function standardForFile(
     flags: CompileCommandFlags[],
     filePath: string,
 ): string | undefined {
-    const target = normalizePath(filePath);
-    for (const entry of flags) {
-        if (entry.file && normalizePath(entry.file) === target) {
-            return normalizeStandard(entry.standard);
-        }
-    }
-    return undefined;
+    return normalizeStandard(compileEntryForFile(flags, filePath)?.standard);
 }
 
 /**

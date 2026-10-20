@@ -4,7 +4,12 @@ import * as vscode from 'vscode';
 import { CONFIG_SECTION } from './constants';
 import { discoverNestedWorkspaces } from './colcon';
 import { IncludeMode, resolveIncludePaths, rosPackageIncludeRoots } from './includeResolver';
-import { compileCommandFlags, CompileCommandFlags, definesForFile, standardForFile } from './parse';
+import {
+    compileCommandFlags,
+    CompileCommandFlags,
+    compileEntryForFile,
+    normalizeStandard,
+} from './parse';
 import { isRosHeaderPath } from './rosEnvironment';
 import { discoverPackages, PackageLocator, RosPackage } from './rosPackage';
 import { loadWorkspace, RosWorkspace } from './rosWorkspace';
@@ -17,10 +22,14 @@ import { loadWorkspace, RosWorkspace } from './rosWorkspace';
  *  - the owning package of a file is found by walking up the tree (cached),
  *  - compile_commands.json is parsed once, in the background, and only re-read
  *    when its mtime changes,
- *  - include paths are cached per package and invalidated on change.
+ *  - include paths are cached per package (or per exact compile entry) and
+ *    invalidated on change.
  */
 export class RosController implements vscode.Disposable {
+    /** Status-bar refresh (active package changed, workspace reloaded, …). */
     readonly onDidUpdate = new vscode.EventEmitter<void>();
+    /** The provider-visible configuration changed and cpptools must re-query. */
+    readonly onDidChangeProvider = new vscode.EventEmitter<void>();
     readonly workspaces: RosWorkspace[] = [];
 
     private readonly locators = new Map<string, PackageLocator>();
@@ -62,6 +71,7 @@ export class RosController implements vscode.Disposable {
 
         this.refreshActivePackage();
         this.onDidUpdate.fire();
+        this.onDidChangeProvider.fire();
 
         // Parsing the compile database can be expensive; do it off the critical path.
         void this.reloadCompileIncludes();
@@ -69,6 +79,7 @@ export class RosController implements vscode.Disposable {
 
     dispose(): void {
         this.onDidUpdate.dispose();
+        this.onDidChangeProvider.dispose();
     }
 
     private addWorkspace(workspace: RosWorkspace): void {
@@ -108,19 +119,43 @@ export class RosController implements vscode.Disposable {
         return this.locators.get(workspace.root)?.owning(filePath);
     }
 
-    includePathsFor(workspace: RosWorkspace, pkg: RosPackage | undefined): string[] {
-        const key = `${workspace.root}\u0000${pkg?.name ?? ''}`;
+    includePathsFor(
+        workspace: RosWorkspace,
+        pkg: RosPackage | undefined,
+        filePath?: string,
+    ): string[] {
+        // If the file was built, its own compile entry lists every include
+        // directory the build actually used. Prefer it over the large ROS-root
+        // fallback; headers and un-built files keep that fallback.
+        const entry = filePath ? this.compileEntryForWorkspace(workspace, filePath) : undefined;
+        const exact = !!entry && entry.includes.length > 0;
+        const key = `${workspace.root}\u0000${pkg?.name ?? ''}\u0000${
+            exact ? `exact\u0000${filePath}` : 'fallback'
+        }`;
         const cached = this.includeCache.get(key);
         if (cached) {
             return cached;
         }
 
         const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION);
+        const rosRoots = rosPackageIncludeRoots(workspace.rosPrefix);
+        // Keep the roots of declared dependencies even in exact mode: editing
+        // package.xml should resolve a new dependency before the next build
+        // refreshes compile_commands.json. Only direct, ROS-layout packages are
+        // added, so the large all-package list is still avoided.
+        const dependencies = pkg ? new Set(pkg.dependencies) : undefined;
+        const exactRoots =
+            exact && dependencies
+                ? rosRoots.filter((root) => dependencies.has(path.basename(root)))
+                : [];
         const paths = resolveIncludePaths(workspace, pkg, {
             mode: configuration.get<IncludeMode>('includeMode', 'package'),
-            compileIncludes: this.compileIncludes.get(workspace.root) ?? [],
+            compileIncludes:
+                exact && entry
+                    ? entry.includes
+                    : (this.compileIncludes.get(workspace.root) ?? []),
             extraIncludePaths: configuration.get<string[]>('extraIncludePaths', []),
-            rosIncludeRoots: rosPackageIncludeRoots(workspace.rosPrefix),
+            rosIncludeRoots: exact ? exactRoots : rosRoots,
             siblingIncludes: this.siblingIncludesFor(workspace, pkg),
         });
         this.includeCache.set(key, paths);
@@ -162,22 +197,25 @@ export class RosController implements vscode.Disposable {
 
     /** `-D` defines from the real build entry for `filePath` (empty for headers). */
     definesForPath(filePath: string): string[] {
-        const workspace = this.workspaceForPath(filePath);
-        if (!workspace) {
-            return [];
-        }
-        const flags = this.compileFlags.get(workspace.root);
-        return flags ? definesForFile(flags, filePath) : [];
+        return this.compileEntryForPath(filePath)?.defines ?? [];
     }
 
     /** `-std` from the real build entry for `filePath`, when it has one. */
     standardForPath(filePath: string): string | undefined {
+        return normalizeStandard(this.compileEntryForPath(filePath)?.standard);
+    }
+
+    private compileEntryForPath(filePath: string): CompileCommandFlags | undefined {
         const workspace = this.workspaceForPath(filePath);
-        if (!workspace) {
-            return undefined;
-        }
+        return workspace ? this.compileEntryForWorkspace(workspace, filePath) : undefined;
+    }
+
+    private compileEntryForWorkspace(
+        workspace: RosWorkspace,
+        filePath: string,
+    ): CompileCommandFlags | undefined {
         const flags = this.compileFlags.get(workspace.root);
-        return flags ? standardForFile(flags, filePath) : undefined;
+        return flags ? compileEntryForFile(flags, filePath) : undefined;
     }
 
     /** Full package list for interactive commands. Scanned on first use, then cached. */
@@ -202,15 +240,23 @@ export class RosController implements vscode.Disposable {
         this.onDidUpdate.fire();
     }
 
-    /** Re-read compile_commands.json when it changed. Returns `true` if it did. */
-    async reloadCompileIncludes(): Promise<boolean> {
+    /**
+     * Re-read compile_commands.json when it changed. Returns `true` if it did.
+     *
+     * `notifyProvider` is false when the caller (refreshAll) will send one
+     * combined notification afterwards, so cpptools is not asked to re-query
+     * twice for a single change.
+     */
+    async reloadCompileIncludes(notifyProvider = true): Promise<boolean> {
         let changed = false;
         for (const workspace of this.workspaces) {
             changed = (await this.loadCompileIncludes(workspace)) || changed;
         }
         if (changed) {
             this.includeCache.clear();
-            this.onDidUpdate.fire();
+            if (notifyProvider) {
+                this.onDidChangeProvider.fire();
+            }
         }
         return changed;
     }
@@ -222,9 +268,10 @@ export class RosController implements vscode.Disposable {
         }
         this.packageLists.clear();
         this.includeCache.clear();
-        await this.reloadCompileIncludes();
+        await this.reloadCompileIncludes(false);
         this.refreshActivePackage();
         this.onDidUpdate.fire();
+        this.onDidChangeProvider.fire();
     }
 
     /**

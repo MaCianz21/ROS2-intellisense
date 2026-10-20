@@ -75,7 +75,7 @@ export class RosConfigurationProvider implements CustomConfigurationProvider {
         }
         const pkg = this.controller.packageForFile(uri.fsPath);
         return {
-            includePath: this.controller.includePathsFor(workspace, pkg),
+            includePath: this.controller.includePathsFor(workspace, pkg, uri.fsPath),
             // The real compile command's -D flags (EIGEN_*, BOOST_*, QT_*, …).
             // Without them macro-guarded code is parsed differently from the build.
             defines: this.controller.definesForPath(uri.fsPath),

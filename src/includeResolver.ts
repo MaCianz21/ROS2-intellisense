@@ -145,6 +145,11 @@ export function planIncludePaths(
     for (const include of options.siblingIncludes ?? []) {
         add(include);
     }
+    // Exact build flags come before the broad ROS roots: they are the real
+    // translation-unit search order and usually resolve project headers sooner.
+    for (const include of options.compileIncludes) {
+        add(include);
+    }
     // Fallback for callers that predate `rosPrefix`: the conventional apt path.
     const rosPrefix =
         workspace.rosPrefix || (workspace.distro ? path.join('/opt/ros', workspace.distro) : '');
@@ -152,13 +157,10 @@ export function planIncludePaths(
         add(path.join(rosPrefix, 'include'));
     }
     // One non-recursive root per installed ROS package, so `<pkg>/...` includes
-    // resolve even before the workspace has been built.
+    // resolve even before the workspace has been built. Files with an exact
+    // compile command pass only their direct dependency roots here.
     for (const root of options.rosIncludeRoots ?? []) {
         add(root);
-    }
-
-    for (const include of options.compileIncludes) {
-        add(include);
     }
     for (const extra of options.extraIncludePaths) {
         add(extra.replace(/\$\{workspaceFolder\}/g, workspace.root));
