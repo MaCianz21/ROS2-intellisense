@@ -9,9 +9,12 @@ dependencies, the detected ROS install, and — for built files — the exact
 `-I` / `-D` / `-std` flags from `compile_commands.json`. It can also run
 `colcon build` and merge the resulting compile databases.
 
-> **Status:** `0.1.8` (beta). Linux and WSL 2 are supported; macOS is best
+> **Status:** `0.1.9` (beta). Linux and WSL 2 are supported; macOS is best
 > effort; native Windows is not supported. Distributed as a VSIX; it is not
 > published on the VS Code Marketplace.
+>
+> This is an independent project. It is not affiliated with or endorsed by
+> Open Robotics or Microsoft.
 
 **Jump to:** [Limitations](#limitations) · [Install](#install) · [Usage](#usage) ·
 [How it works](#how-it-works) · [Commands](#commands) · [Settings](#settings) ·
@@ -79,11 +82,11 @@ dependencies, the detected ROS install, and — for built files — the exact
 
 ### From the VSIX (recommended)
 
-1. Get `ros2-intellisense-0.1.8.vsix`.
+1. Get `ros2-intellisense-0.1.9.vsix`.
 2. Install it from a terminal:
 
    ```bash
-   code --install-extension ros2-intellisense-0.1.8.vsix --force
+   code --install-extension ros2-intellisense-0.1.9.vsix --force
    ```
 
    Or use VS Code: **Extensions** → `...` → **Install from VSIX…**.
@@ -332,3 +335,6 @@ Version history lives in [`CHANGELOG.md`](./CHANGELOG.md).
 
 MIT. See [LICENSE](https://github.com/MaCianz21/ROS-intellisense-setup/blob/master/LICENSE)
 for the full text.
+
+Third-party notices, including the Microsoft C/C++ extension API notice, are in
+[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).

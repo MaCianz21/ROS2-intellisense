@@ -2,7 +2,7 @@
   "name": "ros2-intellisense",
   "displayName": "ROS 2 IntelliSense",
   "description": "Adds the active ROS 2 package and its dependencies to C/C++ IntelliSense, and builds colcon workspaces.",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "publisher": "macianz",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -38,6 +38,13 @@
   "extensionDependencies": [
     "ms-vscode.cpptools"
   ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "ROS 2 IntelliSense writes workspace settings, reads local files, and runs local colcon/setup scripts, so it requires a trusted workspace."
+    },
+    "virtualWorkspaces": false
+  },
   "contributes": {
     "commands": [
       {

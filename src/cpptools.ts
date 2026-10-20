@@ -2,6 +2,9 @@
  * Minimal, self-contained bindings for the Microsoft C/C++ extension API
  * (https://github.com/microsoft/vscode-cpptools-api).
  *
+ * The API is MIT-licensed, Copyright (c) Microsoft Corporation. See
+ * THIRD_PARTY_NOTICES.md for the upstream notice.
+ *
  * We talk to the API through `ms-vscode.cpptools`'s exports instead of a
  * runtime npm dependency so that the packaged extension stays dependency-free.
  */
