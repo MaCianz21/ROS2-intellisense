@@ -320,4 +320,7 @@ contributor (or a coding agent) reads.
 
 Version history lives in [`CHANGELOG.md`](./CHANGELOG.md).
 
-MIT licensed.
+## License
+
+MIT. See [LICENSE](https://github.com/MaCianz21/ROS-intellisense-setup/blob/master/LICENSE)
+for the full text.
