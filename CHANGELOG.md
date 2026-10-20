@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.9
+
+- **Third-party notice.** Added `THIRD_PARTY_NOTICES.md` with the MIT notice for
+  Microsoft's `vscode-cpptools-api`, whose public API the vendored bindings
+  implement.
+- **Workspace trust declarations.** The extension now declares that it is not
+  supported in untrusted or virtual workspaces, because it writes workspace
+  settings and runs local `colcon`/setup scripts. This prevents Restricted Mode
+  from silently allowing those operations.
+- **Affiliation disclaimer.** The README now states that the project is
+  independent and not affiliated with or endorsed by Open Robotics or Microsoft.
+
 ## 0.1.8
 
 - **Built files use their own compile includes.** When a file has an entry in
