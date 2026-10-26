@@ -16,67 +16,9 @@ dependencies, the detected ROS install, and — for built files — the exact
 > This is an independent project. It is not affiliated with or endorsed by
 > Open Robotics or Microsoft.
 
-**Jump to:** [Limitations](#limitations) · [Install](#install) · [Usage](#usage) ·
+**Jump to:** [Install](#install) · [Usage](#usage) · [Limitations](#limitations) ·
 [How it works](#how-it-works) · [Commands](#commands) · [Settings](#settings) ·
 [Troubleshooting](#troubleshooting)
-
-## What you get
-
-- **Per file, not per workspace.** The include path follows the file you are
-  editing: the owning package, its dependencies, the ROS install, and the exact
-  flags from the build.
-- **Zero configuration.** When no configuration provider is selected, the
-  extension selects itself. If another provider is already configured (for
-  example CMake Tools), it asks once and respects the answer.
-- **Exact build flags.** It forwards the file's own `-I` / `-isystem`, `-D` and
-  `-std` from `compile_commands.json`, including databases produced by a normal
-  terminal build.
-- **ROS install discovery.** apt (`/opt/ros`), RoboStack/conda, Docker, custom
-  prefixes and source builds are detected from the sourced environment.
-- **Build integration.** Run `colcon build` from VS Code and merge every
-  `build/*/compile_commands.json` into one file.
-- **References across the workspace.** The symbol index covers `src/**` and
-  `include/**` (and packages kept directly under a repo root), so Find All
-  References sees declarations in headers too.
-- **Lightweight.** No polling and no full workspace scan. Include paths are
-  concrete and non-recursive by default.
-
-## Requirements
-
-- VS Code 1.85+.
-- The [C/C++ extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)
-  (`ms-vscode.cpptools`) — declared as a hard dependency.
-- A ROS 2 installation (apt under `/opt/ros`, a RoboStack/conda environment, or
-  any custom prefix). The extension discovers it from the sourced environment;
-  `ros2IntelliSense.rosPrefix` pins it when auto-detection is not possible.
-- `colcon` on `PATH` (only needed for the build commands).
-- Linux and WSL 2, on **x86_64 and arm64** (Jetson, Raspberry Pi). macOS is best
-  effort; native Windows is not supported — use WSL 2.
-
-## Limitations
-
-- **Platform:** Linux and WSL 2 are the supported targets. Native Windows is not
-  supported; macOS is best effort and not validated.
-- **Validated environment:** Ubuntu 24.04, GCC 13, ROS 2 Jazzy, VS Code 1.142 and
-  cpptools 1.34.4. arm64, clang, conda/RoboStack and C++14/20 workspaces are
-  handled in the code but have not been validated on real hardware.
-- **Workspace layouts:** sibling source includes cover `<ws>/src/<dep>` and
-  `<repo>/<dep>`, not grouped layouts such as `src/<group>/<dep>`. Grouped colcon
-  layouts are discovered up to two levels under `src/`.
-- **Multi-root windows:** provider-conflict detection and the
-  `c_cpp_properties.json` check focus on the first workspace folder.
-- **`Build My Packages` fallback:** if `src/<user>` does not exist, it falls back
-  to `src`, then to the workspace root, so it may build more than “your”
-  packages. Set `ros2IntelliSense.mineBasePath` to be strict.
-- **Provider ownership:** only one configuration provider can be active. The
-  extension never silently overrides CMake Tools; it asks once. The two cannot
-  feed the C/C++ extension at the same time.
-- **First activation writes a setting:** when no provider is configured, the
-  extension writes `C_Cpp.default.configurationProvider` into workspace settings
-  so a fresh clone works without a setup command.
-- **No Marketplace or auto-update:** install and upgrade from the VSIX manually.
-- **No telemetry or network access.** Builds run only when you invoke a build
-  command.
 
 ## Install
 
@@ -191,6 +133,64 @@ If you build with `colcon` in a terminal instead, the per-package
 the merge command is optional. After adding or removing a `package.xml`
 dependency, run **ROS 2: Refresh Active Package / IntelliSense** (or reload the
 window) to recompute the include paths.
+
+## What you get
+
+- **Per file, not per workspace.** The include path follows the file you are
+  editing: the owning package, its dependencies, the ROS install, and the exact
+  flags from the build.
+- **Zero configuration.** When no configuration provider is selected, the
+  extension selects itself. If another provider is already configured (for
+  example CMake Tools), it asks once and respects the answer.
+- **Exact build flags.** It forwards the file's own `-I` / `-isystem`, `-D` and
+  `-std` from `compile_commands.json`, including databases produced by a normal
+  terminal build.
+- **ROS install discovery.** apt (`/opt/ros`), RoboStack/conda, Docker, custom
+  prefixes and source builds are detected from the sourced environment.
+- **Build integration.** Run `colcon build` from VS Code and merge every
+  `build/*/compile_commands.json` into one file.
+- **References across the workspace.** The symbol index covers `src/**` and
+  `include/**` (and packages kept directly under a repo root), so Find All
+  References sees declarations in headers too.
+- **Lightweight.** No polling and no full workspace scan. Include paths are
+  concrete and non-recursive by default.
+
+## Requirements
+
+- VS Code 1.85+.
+- The [C/C++ extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)
+  (`ms-vscode.cpptools`) — declared as a hard dependency.
+- A ROS 2 installation (apt under `/opt/ros`, a RoboStack/conda environment, or
+  any custom prefix). The extension discovers it from the sourced environment;
+  `ros2IntelliSense.rosPrefix` pins it when auto-detection is not possible.
+- `colcon` on `PATH` (only needed for the build commands).
+- Linux and WSL 2, on **x86_64 and arm64** (Jetson, Raspberry Pi). macOS is best
+  effort; native Windows is not supported — use WSL 2.
+
+## Limitations
+
+- **Platform:** Linux and WSL 2 are the supported targets. Native Windows is not
+  supported; macOS is best effort and not validated.
+- **Validated environment:** Ubuntu 24.04, GCC 13, ROS 2 Jazzy, VS Code 1.142 and
+  cpptools 1.34.4. arm64, clang, conda/RoboStack and C++14/20 workspaces are
+  handled in the code but have not been validated on real hardware.
+- **Workspace layouts:** sibling source includes cover `<ws>/src/<dep>` and
+  `<repo>/<dep>`, not grouped layouts such as `src/<group>/<dep>`. Grouped colcon
+  layouts are discovered up to two levels under `src/`.
+- **Multi-root windows:** provider-conflict detection and the
+  `c_cpp_properties.json` check focus on the first workspace folder.
+- **`Build My Packages` fallback:** if `src/<user>` does not exist, it falls back
+  to `src`, then to the workspace root, so it may build more than “your”
+  packages. Set `ros2IntelliSense.mineBasePath` to be strict.
+- **Provider ownership:** only one configuration provider can be active. The
+  extension never silently overrides CMake Tools; it asks once. The two cannot
+  feed the C/C++ extension at the same time.
+- **First activation writes a setting:** when no provider is configured, the
+  extension writes `C_Cpp.default.configurationProvider` into workspace settings
+  so a fresh clone works without a setup command.
+- **No Marketplace or auto-update:** install and upgrade from the VSIX manually.
+- **No telemetry or network access.** Builds run only when you invoke a build
+  command.
 
 ## How it works
 
